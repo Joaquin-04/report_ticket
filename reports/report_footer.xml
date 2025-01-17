@@ -1,0 +1,14 @@
+<odoo>
+    <data>
+        <template id="report_ticket_footer">
+            <div class="footer">
+                <div>
+                    Gracias por su compra.
+                </div>
+                <div>
+                    www.ejemplo.com
+                </div>
+            </div>
+        </template>
+    </data>
+</odoo>
