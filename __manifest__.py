@@ -12,5 +12,7 @@
         'reports/report_ticket.xml',
         'reports/report_header.xml',
         'reports/report_footer.xml',
+        "views/account_journal_view.xml",
+        "views/account_move_view.xml"
     ],
 }
