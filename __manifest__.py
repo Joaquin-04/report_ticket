@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 {
-    'name': "report_ticket_template",
+    'name': "Recibo",
     'summary': "Reporte para impresora térmica",
     'description': "Módulo para generar un reporte de factura en formato para impresora térmica.",
-    'author': "OutsourceArg",
-    'website': "https://www.outsourcearg.com",
+    'author': "",
+    'website': "",
     'category': 'Reporting',
     'version': '1.0',
     'depends': ['account'],
