@@ -235,6 +235,7 @@
                                 <img t-attf-src="/report/barcode/?barcode_type={{'QR'}}&amp;value={{ o.l10n_ar_afip_qr_code }}&amp;width={{400}}&amp;height={{400}}" style="width:100px;height:100px;"/>
                             </div>
                         </t>
+                        <br/>
                         <strong>CAE:</strong> <t t-esc="o.l10n_ar_afip_auth_code"/>
                         <div style="margin-top:2px;">
                             <strong>Vto. CAE:</strong> <t t-esc="o.l10n_ar_afip_auth_code_due"/>
