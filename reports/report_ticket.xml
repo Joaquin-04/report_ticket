@@ -1,58 +1,269 @@
+<?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <data>
-        <!-- Plantilla del reporte -->
-        <record id="report_ticket_template" model="ir.ui.view">
-            <field name="name">report.ticket.template</field>
-            <field name="type">qweb</field>
-            <field name="model">account.move</field>
-            <field name="arch" type="xml">
-                <t t-name="report_ticket_template.report_ticket_template">
-                    <t t-call="web.html_container">
-                        <t t-foreach="docs" t-as="doc">
-                            <t t-call="report_ticket_header"/>
-                            <div class="page" style="width: 80mm;">
-                                <h2>Factura <span t-field="doc.name"/></h2>
-                                <p>Fecha de Emisión: <span t-field="doc.invoice_date"/></p>
-                                <p>Cliente: <span t-field="doc.partner_id.name"/></p>
-                                <table class="table table-sm">
-                                    <thead>
-                                        <tr>
-                                            <th>Cantidad</th>
-                                            <th>Descripción</th>
-                                            <th>Precio Unitario</th>
-                                            <th>Total</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <t t-foreach="doc.invoice_line_ids" t-as="line">
-                                            <tr>
-                                                <td t-field="line.quantity"/>
-                                                <td t-field="line.name"/>
-                                                <td t-field="line.price_unit"/>
-                                                <td t-field="line.price_total"/>
-                                            </tr>
-                                        </t>
-                                    </tbody>
-                                </table>
-                                <p>Subtotal: <span t-field="doc.amount_untaxed"/></p>
-                                <p>Impuestos: <span t-field="doc.amount_tax"/></p>
-                                <h3>Total: <span t-field="doc.amount_total"/></h3>
-                            </div>
-                            <t t-call="report_ticket_footer"/>
+    <template id="report_ticket">
+        <t t-call="web.external_layout">
+            <t t-set="o" t-value="o.with_context(lang=lang)"/>
+            <t t-set="report_date" t-value="o.invoice_date"/>
+            <t t-set="report_number" t-value="o.name"/>
+            <t t-set="pre_printed_report" t-value="report_type == 'pdf' and o.journal_id.l10n_ar_afip_pos_system == 'II_IM'"/>
+            <t t-set="document_letter" t-value="o.l10n_latam_document_type_id.l10n_ar_letter"/>
+            <t t-set="document_legend" t-value="o.l10n_latam_document_type_id.code and 'Cod. %02d' % int(o.l10n_latam_document_type_id.code) or ''"/>
+            <t t-set="report_name" t-value="o.l10n_latam_document_type_id.report_name"/>
+            <t t-set="header_address" t-value="o.journal_id.l10n_ar_afip_pos_partner_id"/>
+            
+            <t t-set="company" t-value="o.company_id"/>
+            <div class="receipt" style="font-family: 'Courier New', monospace; font-size: 12px;  text-align: left; ">
+            <div class="afip-info">
+                <t t-if="report_number">
+                    <div>CUIT: <t t-if="o.company_id" t-esc="o.company_id.vat"/><t t-else="" t-esc="o.company.vat"/></div>
+                    <div style="marign-top:5px;">Ing. Brutos: <t t-if="o.company_id" t-esc="o.company_id.l10n_ar_gross_income_number"/><t t-else="" t-esc="o.company.l10n_ar_gross_income_number"/></div>
+                    <div style="marign-top:5px;">Inicio de actividades: <t t-if="o.company_id" t-esc="o.company_id.l10n_ar_afip_start_date"/><t t-else="" t-esc="o.company.l10n_ar_afip_start_date"/></div>
+                    <div style="marign-top:5px;">
+                            
+                        Dirección: 
+                        <t t-if="o.journal_id.x_studio_direccion">
+                            <t t-esc="o.journal_id.x_studio_direccion"/>
+                        </t>
+                        <t t-else=" ">
+                            <t t-esc="o.company_id.street"/>
+                            <t t-if="o.company_id.city">
+                                , <t t-esc="o.company_id.city"/>
+                            </t>
+                            <t t-if="o.company_id.state_id">
+                                , <t t-esc="o.company_id.state_id[0].name"/>
+                            </t>
+                            <t t-if="o.company_id.country_id">
+                                , <t t-esc="o.company_id.country_id[0].name"/>
+                            </t>
+                        </t>
+                        
+                    </div>
+
+                    <div style="marign-top:5px;">IVA Responsable Inscripto</div>
+                </t>
+            </div>
+            <hr/>
+            <t t-if="report_number ">
+                <div class="afip-invoice-info">
+                    <div class="text-center mb-1">
+                        <span>___________________________________________</span>
+                    </div>
+                    <strong>
+                        <t t-esc="o.l10n_latam_document_type_id.name"/> 
+                        - ORIGINAL
+                        
+                        <t t-if="o.x_studio_letra_factura == 'A'">
+                            - COD <t t-esc="o.l10n_latam_document_type_id.l10n_ar_letter"/>
+                        </t>
+                        
+                        <br/>
+                        N° DE FACTURA: <t t-esc="report_number"/><br/>
+                        FECHA: <t t-esc="o.invoice_date"/>
+                    </strong>
+                    <div class="text-center mb-1">
+                        <span>___________________________________________</span>
+                    </div>
+                </div>
+            </t>
+            <hr/>
+            <t t-if="o.partner_id ">
+                <div class="afip-client-info">
+                    <div>CLIENTE: <t t-esc="o.partner_id.name"/></div>
+                    <t t-if="report_number">
+                        <t t-if="o.partner_id.l10n_latam_identification_type_id and o.partner_id.vat and o.partner_id.vat != ' '">
+                            <t t-esc="o.partner_id.l10n_latam_identification_type_id[1]"/>:
+                        </t>
+                        <t t-if="o.partner_id.vat and o.partner_id.vat != ' '">
+                            <t t-esc="o.partner_id.vat"/>
+                        </t>
+                        <t t-if="o.partner_id.l10n_ar_afip_responsibility_type_id and o.partner_id.name !='Consumidor Final'">
+                            <div><t t-esc="o.partner_id.l10n_ar_afip_responsibility_type_id.name"/></div>
                         </t>
                     </t>
+                    <t t-if="o.partner_id.street">
+                        <div>
+                            CALLE: <t t-esc="o.partner_id.street"/>
+                            <t t-if="o.partner_id.city">
+                                , <t t-esc="o.partner_id.city"/>
+                            </t>
+                            <t t-if="o.partner_id.state_id">
+                                , <t t-esc="o.partner_id.state_id[1]"/>
+                            </t>
+                            <t t-if="o.partner_id.country_id">
+                                , <t t-esc="o.partner_id.country_id[1]"/>
+                            </t>
+                        </div>
+                        <t t-if="o.partner_id.email">
+                            <div>Email: <t t-esc="o.partner_id.email"/></div>
+                        </t>
+                        <t t-if="o.partner_id.phone or o.partner_id.mobile">
+                            <div>Tel: <t t-esc="o.partner_id.phone"/></div>
+                        </t>
+                        <t t-if="o.partner_id.website">
+                            <div>Website: <t t-esc="o.partner_id.website"/></div>
+                        </t>
+                    </t>
+                </div>
+            </t>
+            <hr/>
+            <strong>
+                <div>DESCRIPCIÓN</div>
+                <div>
+                    CANT. x PRECIO UNIT.
+                    <span class="price_display pos-receipt-right-align">
+                    IMPORTE
+                    </span>
+                </div>
+            </strong>
+            <hr/>
+            <table class="table table-sm o_main_table table-borderless mt-4" name="invoice_line_table">
+                <thead>
+                    <tr>
+                        <th name="th_description" class="text-start"><span style="color:black !important;font-weight:strong !important;">Prod.</span></th>
+                        <th name="th_quantity"><span style="color:black !important;font-weight:strong !important;">Cant.</span></th>
+                        <th name="th_priceunit" t-attf-class="text-end {{ 'd-none d-md-table-cell' if report_type == 'html' else '' }}"><span style="color:black !important;font-weight:strong !important;">$ C/U</span></th>
+                        <th name="th_discount" t-if="display_discount" t-attf-class="text-end {{ 'd-none d-md-table-cell' if report_type == 'html' else '' }}">
+                            <span style="color:black !important;font-weight:strong !important;">Disc.%</span>
+                        </th>
+                        <th name="th_subtotal" class="text-end">
+                            <span style="color:black !important;font-weight:strong !important;">Monto($)</span>
+                        </th>
+                    </tr>
+                </thead>
+                <tbody class="invoice_tbody">
+                    <t t-set="current_subtotal" t-value="0"/>
+                    <t t-set="current_total" t-value="0"/>
+                    <t t-set="lines" t-value="o.invoice_line_ids.sorted(key=lambda l: (-l.sequence, l.date, l.move_name, -l.id), reverse=True)"/>
+    
+                    <t t-foreach="lines" t-as="line">
+                        <t t-set="current_subtotal" t-value="current_subtotal + line.price_subtotal"/>
+                        <t t-set="current_total" t-value="current_total + line.price_total"/>
+    
+                        <tr t-att-class="'bg-200 fw-bold o_line_section' if line.display_type == 'line_section' else 'fst-italic o_line_note' if line.display_type == 'line_note' else ''">
+                            <t t-if="line.display_type == 'product'" name="account_invoice_line_accountable">
+                                <td name="account_invoice_line_name"><span t-if="line.product_id.name" t-field="line.product_id.name" t-options="{'widget': 'text'}">Bacon Burger</span></td>
+                                <td name="td_quantity" class="text-end">
+                                    <span t-esc="('%.1f' % line.quantity).replace('.', ',')"/>
+                                    <span t-field="line.product_uom_id" groups="uom.group_uom" style="font-size:10px !important;">units</span>
+                                </td>
+                                <td name="td_price_unit" t-attf-class="text-end {{ 'd-none d-md-table-cell' if report_type == 'html' else '' }}">
+                                    <span t-esc="('%.0f' % line.price_unit).replace('.', ',')"/>
+                                </td>
+                                <td name="td_discount" t-if="display_discount" t-attf-class="text-end {{ 'd-none d-md-table-cell' if report_type == 'html' else '' }}">
+                                    <span class="text-nowrap" t-field="line.discount">0</span>
+                                </td>
+                                <td name="td_subtotal" class="text-end o_price_total">
+                                    <span t-esc="('%.0f' % line.price_subtotal).replace('.', ',')"/>
+                                    
+                                </td>
+                            </t>
+                            <t t-elif="line.display_type == 'line_section'">
+                                <td colspan="99">
+                                    <span t-field="line.name" t-options="{'widget': 'text'}">A section title</span>
+                                </td>
+                                <t t-set="current_section" t-value="line"/>
+                                <t t-set="current_subtotal" t-value="0"/>
+                            </t>
+                            <t t-elif="line.display_type == 'line_note'">
+                                <td colspan="99">
+                                    <span t-field="line.name" t-options="{'widget': 'text'}">A note, whose content usually applies to the section or product above.</span>
+                                </td>
+                            </t>
+                        </tr>
+    
+                        <t t-if="current_section and (line_last or lines[line_index+1].display_type == 'line_section')">
+                            <tr class="is-subtotal text-end">
+                                <td colspan="99">
+                                    <strong class="mr16">Subtotal</strong>
+                                    <span t-out="current_subtotal" t-options="{&quot;widget&quot;: &quot;monetary&quot;, &quot;display_currency&quot;: o.currency_id}">31.05</span>
+                                </td>
+                            </tr>
+                        </t>
+                    </t>
+                </tbody>
+            </table>
+            
+            <div id="right-elements" t-attf-class="#{'col-8' if report_type != 'html' else 'col-12 col-md-5'} ms-5 d-inline-block float-end">
+                <div id="total" class="clearfix row">
+                    <div class="ms-auto">
+                        <table class="table table-sm table-borderless avoid-page-break-inside">
+    
+                            
+                            <t t-set="tax_totals" t-value="o.tax_totals"/>
+                            <tr class="border-black o_total">
+                                <td><strong>Total</strong></td>
+                                <td class="text-end">
+                                    <span>$</span>
+                                    <span t-esc="('%.0f' % float(tax_totals['formatted_amount_total'].replace('$', '').replace('\xa0', '').replace('.', '').replace(',', '.'))).replace('.', ',')">31.05</span>
+                                </td>
+                            </tr>
+                    
+                            
+                            <t t-if="print_with_payments">
+                                <t t-if="o.payment_state != 'invoicing_legacy'">
+                                    <t t-set="payments_vals" t-value="o.sudo().invoice_payments_widget and o.sudo().invoice_payments_widget['content'] or []"/>
+                                    <t t-foreach="payments_vals" t-as="payment_vals">
+                                        <tr t-if="payment_vals['is_exchange'] == 0">
+                                            <td>
+                                                <i class="oe_form_field text-end oe_payment_label">Paid on <t t-out="payment_vals['date']" t-options="{&quot;widget&quot;: &quot;date&quot;}">2021-09-19</t></i>
+                                            </td>
+                                            <td class="text-end">
+                                                <span t-out="payment_vals['amount']" t-options="{&quot;widget&quot;: &quot;monetary&quot;, &quot;display_currency&quot;: o.currency_id}">20.00</span>
+                                            </td>
+                                        </tr>
+                                    </t>
+                                    <t t-if="len(payments_vals) &gt; 0">
+                                        <tr class="border-black fw-bold">
+                                            <td>Amount Due</td>
+                                            <td class="text-end">
+                                                <span t-field="o.amount_residual">11.05</span>
+                                            </td>
+                                        </tr>
+                                    </t>
+                                </t>
+                            </t>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <hr/>
+            <div style="margin-top: 100px;"> 
+                <t t-if="o.l10n_ar_afip_auth_code and report_name">
+                    <div class="afip-cae-info" style="text-align: center; font-size: 100%; margin-top: 30px;">
+                        <t t-if="o.l10n_ar_afip_qr_code">
+                            <div style="overflow: hidden;">
+                                <img t-attf-src="/report/barcode/?barcode_type={{'QR'}}&amp;value={{ o.l10n_ar_afip_qr_code }}&amp;width={{400}}&amp;height={{400}}" style="width:100px;height:100px;"/>
+                            </div>
+                        </t>
+                        <strong>CAE:</strong> <t t-esc="o.l10n_ar_afip_auth_code"/>
+                        <div style="margin-top:2px;">
+                            <strong>Vto. CAE:</strong> <t t-esc="o.l10n_ar_afip_auth_code_due"/>
+                        </div>
+                    </div>
                 </t>
-            </field>
-        </record>
-
-        <!-- Acción del reporte -->
-        <record id="action_report_factura_termica" model="ir.actions.report">
-            <field name="name">Reporte Térmica</field>
-            <field name="model">account.move</field>
-            <field name="report_type">qweb-pdf</field>
-            <field name="report_name">report_ticket_template.report_ticket_template</field>
-            <field name="report_file">report_ticket_template.report_ticket_template</field>
-            <field name="print_report_name">'Factura de proveedor - %s' % (object.name or '')</field>
-        </record>
-    </data>
+            </div>
+            <hr/>
+            <div style="text-align: center;">
+                Gracias por comprar con nosotros.
+            </div>
+        </div>
+        </t>
+    </template>
+        
+    <template id="report_ticket_template">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="o">
+                <t t-call="report_ticket_template.report_ticket"/>
+            </t>
+        </t>
+    </template>
+        
+    <record id="action_report_factura_termica" model="ir.actions.report">
+        <field name="name">Reporte Térmica</field>
+        <field name="model">account.move</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">report_ticket_template.report_ticket_template</field>
+        <field name="report_file">report_ticket_template.report_ticket_template</field>
+        <field name="print_report_name">'Factura de proveedor - %s' % (object.name or '')</field>
+    </record>
 </odoo>
